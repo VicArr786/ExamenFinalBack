@@ -29,7 +29,7 @@ const start = async () => {
     const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 
     const { url } = await server.listen({ port: PORT });
-    console.log(`GraphQl ready this has the huzz${url}`);
+    console.log(`GraphQl ready this has the huzz ${url}`);
 };
 
 start().catch((err) => {

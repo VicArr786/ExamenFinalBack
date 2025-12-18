@@ -13,6 +13,11 @@ export interface CaughtPokemon {
     _id?: ObjectId;
     originalSpeciesId: string;
     nickname?: string;
+    attack : number;
+    defense: number;
+    speed: number;
+    special: number;
     level: number;
     capturedAt: Date;
+
 }

@@ -2,17 +2,23 @@ import { gql } from "apollo-server";
 
 export const typeDefs = gql`
     enum PokemonType {
-        GRASS
-        POISON
+        NORMAL
         FIRE
         WATER
-        NORMAL
-        FLYING
         ELECTRIC
-        # Add others as needed
+        GRASS
+        ICE
+        FIGHTING
+        POISON
+        GROUND
+        FLYING
+        PSYCHIC
+        BUG
+        ROCK
+        GHOST
+        DRAGON
     }
-
-    type PokemonSpecies {
+    type Pokemon {
         _id: ID!
         name: String!
         description: String!
@@ -20,50 +26,39 @@ export const typeDefs = gql`
         weight: Float!
         types: [PokemonType!]!
     }
-
-    type CaughtPokemon {
+    type OwnedPokemon {
         _id: ID!
+        #En base datos se guardará solo el id, encadenado pokemon.
+        pokemon: Pokemon!
         nickname: String
+        attack: Int!
+        defense: Int!
+        speed: Int!
+        special: Int!
         level: Int!
-        species: PokemonSpecies!
-        capturedAt: String
     }
-
     type Trainer {
         _id: ID!
         name: String!
-        pokemons: [CaughtPokemon!]!
+        pokemons: [OwnedPokemon]!
     }
-
-    type Query {
-        # Returns all pokedex entries
-        pokemons: [PokemonSpecies!]!
-        # Returns a specific pokedex entry by ID
-        pokemon(id: ID!): PokemonSpecies
-        # Returns the logged-in trainer's profile
-        me: Trainer
-    }
-
     type Mutation {
-        # Registers a new trainer and returns a JWT
         startJourney(name: String!, password: String!): String!
-
-        # Authenticates a trainer and returns a JWT
         login(name: String!, password: String!): String!
-
-        # Adds a new species to the global database
         createPokemon(
-            name: String!
-            description: String!
-            height: Float!
-            weight: Float!
+            name: String!,
+            description: String!,
+            height: Float!,
+            weight: Float!,
             types: [PokemonType!]!
-        ): PokemonSpecies!
-
-        # Captures a pokemon for the current trainer
-        catchPokemon(pokemonId: ID!, nickname: String): CaughtPokemon!
-
-        # Removes a pokemon from the trainer's collection
+        ): Pokemon!
+        catchPokemon(pokemonId: ID!, nickname: String):
+        OwnedPokemon!
         freePokemon(ownedPokemonId: ID!): Trainer!
+    }
+    type Query {
+        me: Trainer
+        pokemons(page: Int, size: Int): [Pokemon]!
+        pokemon(id: ID!): Pokemon
     }
 `;

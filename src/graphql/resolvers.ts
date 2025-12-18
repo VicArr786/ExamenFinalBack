@@ -3,6 +3,7 @@ import { GraphQLError } from "graphql";
 import * as TrainerModel from "../collections/TrainerCollection";
 import * as SpeciesModel from "../collections/SpeciesCollection";
 import * as PokemonModel from "../collections/PokemonCollection";
+import {randomInt} from "node:crypto";
 
 const JWT_SECRET = "pikachu_secret_key";
 
@@ -37,24 +38,23 @@ export const resolvers = {
             const newCaughtPokemon = {
                 nickname: args.nickname || species.name,
                 level: 1,
+                attack: randomInt(1,100),
+                defense: randomInt(1,100),
+                special: randomInt(1,100),
                 originalSpeciesId: args.pokemonId,
                 capturedAt: new Date()
             };
 
-            const savedPokemon = await PokemonModel.addCaughtPokemon(newCaughtPokemon);
+            const savedPokemon = await PokemonModel.catchPokemon(newCaughtPokemon);
             await TrainerModel.addPokemonToTrainer(context.user.id, savedPokemon);
             return savedPokemon;
         },
         freePokemon: async (_: any, args: { ownedPokemonId: string }, context: { user: any }) => {
             if (!context.user) throw new GraphQLError("Not authenticated");
-            await PokemonModel.deleteCaughtPokemon(args.ownedPokemonId);
+            await PokemonModel.freePokemon(args.ownedPokemonId);
             return await TrainerModel.removePokemonFromTrainer(context.user.id, args.ownedPokemonId);
         },
     },
 
-    CaughtPokemon: {
-        species: async (parent: any) => {
-            return await SpeciesModel.getSpeciesById(parent.originalSpeciesId);
-        }
-    }
+
 };

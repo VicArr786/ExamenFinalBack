@@ -10,7 +10,7 @@ export const createTrainer = async (name: string, password: string) => {
     const encryptedPasswd = await bcrypt.hash(password, 10);
 
     const exists = await db.collection<Trainer>(COLECCION).findOne({ name } as any);
-    if (exists) throw new Error("Trainer name already taken");
+    if (exists) throw new Error("Be original blud name taken cuh");
 
     const result = await db.collection<Trainer>(COLECCION).insertOne({
         name,
