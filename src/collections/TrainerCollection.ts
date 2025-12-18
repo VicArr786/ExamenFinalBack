@@ -35,7 +35,6 @@ export const validateTrainer = async (name: string, password: string) => {
 export const findTrainerById = async (id: string) => {
     const db = getDB();
     if (!ObjectId.isValid(id)) return null;
-    // 'as any' prevents the TypeScript error regarding _id types
     return await db.collection<Trainer>(COLECCION).findOne({ _id: new ObjectId(id) } as any);
 };
 
