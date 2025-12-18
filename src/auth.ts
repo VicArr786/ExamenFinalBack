@@ -1,43 +1,25 @@
-// src/auth.ts
-import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import { getDB } from "./mongo";
 import { ObjectId } from "mongodb";
 
-dotenv.config();
-const SECRET = process.env.JWT_SECRET;
+const SECRET = "pikachu_secret_key";
 
-type TokenPayload = {
-    userId: string;
-};
-
-export const signToken = (userId: string) => {
-    if (!SECRET) {
-        console.error("THERE AINT NO JWT_SECRET en el .env cuh" );
-        return;
-    }
-    return jwt.sign({ userId }, SECRET, { expiresIn: "1h" });
-};
-
-export const verifyToken = (token: string): TokenPayload | null => {
-    if (!SECRET) {
-        console.error("THERE AINT NO JWT_SECRET en el .env cuh");
-        return null;
-    }
-
+export const getUserFromToken = async (token: string) => {
     try {
-        return jwt.verify(token, SECRET) as TokenPayload;
+
+        const payload = jwt.verify(token, SECRET) as { id: string; name: string };
+
+        if (!payload || !payload.id) return null;
+
+        const db = getDB();
+        // 2. Search in the "Trainers" collection, not "UsersPosts"
+        const user = await db
+            .collection("Trainers")
+            .findOne({ _id: new ObjectId(payload.id) });
+
+        // 3. Return the user (this becomes context.user)
+        return user ? { ...user, id: user._id.toString() } : null;
     } catch (err) {
         return null;
     }
-};
-
-export const getUserFromToken = async (token: string) => {
-    const payload = verifyToken(token);
-    if (!payload) return null;
-
-    const db = getDB();
-    return await db
-        .collection("UsersPosts")
-        .findOne({ _id: new ObjectId(payload.userId) });
 };

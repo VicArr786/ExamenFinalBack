@@ -14,22 +14,24 @@ const start = async () => {
     const server = new ApolloServer({
         typeDefs,
         resolvers,
-        // Pasamos user en el context a partir del token JWT
         context: async ({ req }) => {
             const authHeader = req.headers.authorization || "";
+
+            // Extract token regardless of whether 'Bearer ' prefix is present
             const token = authHeader.startsWith("Bearer ")
                 ? authHeader.slice(7)
                 : authHeader;
-
             const user = token ? await getUserFromToken(token) : null;
-
-            return { req, user };
+            return { user };
         },
     });
 
     const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
+
     const { url } = await server.listen({ port: PORT });
-    console.log(`GraphQL API lista en ${url}`);
+    console.log(`GraphQl ready this has the huzz${url}`);
 };
 
-start().catch((err) => console.error(err));
+start().catch((err) => {
+    console.error("Wrong u scared the huzz", err);
+});

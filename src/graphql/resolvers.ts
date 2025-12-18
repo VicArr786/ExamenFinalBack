@@ -1,71 +1,60 @@
-import { IResolvers } from "@graphql-tools/utils";
-import { getDB } from "../mongo";
-import { ObjectId } from "mongodb";
-import { createUser, validateUser } from "../collections/userCollection";
-import { signToken } from "../auth";
-import { addPost, deletePost, updatePost, validatePostBelongsToUser } from "../collections/postCollection";
+import jwt from "jsonwebtoken";
+import { GraphQLError } from "graphql";
+import * as TrainerModel from "../collections/TrainerCollection";
+import * as SpeciesModel from "../collections/SpeciesCollection";
+import * as PokemonModel from "../collections/PokemonCollection";
 
+const JWT_SECRET = "pikachu_secret_key";
 
-const coleccion = () => getDB().collection("Posts");
-
-export const resolvers: IResolvers = {
+export const resolvers = {
     Query: {
-        me: async (_, __, { user }) => {
-            if (!user) return null;
-            return {
-                _id: user._id.toString(),
-                nombre: user.nombre,
-                email: user.email
-            }
+        pokemons: async () => await SpeciesModel.getAllSpecies(),
+        pokemon: async (_: any, args: { id: string }) => await SpeciesModel.getSpeciesById(args.id),
+        me: async (_: any, __: any, context: { user: any }) => {
+            if (!context.user) throw new GraphQLError("Not authenticated");
+            return await TrainerModel.findTrainerById(context.user.id);
         },
-        getPosts: async () => await coleccion().find().toArray(),
-        getPost: async (_, { id }) => await coleccion().findOne({ _id: new ObjectId(id) }),
-
     },
 
-
     Mutation: {
-
-        register: async (_, { nombre, email, password }) => {
-            const userId = await createUser(nombre, email, password);
-            if (!userId){
-                return "Be original lil bro";
-            }
-            return signToken(userId);
+        startJourney: async (_: any, args: any) => {
+            const id = await TrainerModel.createTrainer(args.name, args.password);
+            return jwt.sign({ id, name: args.name }, JWT_SECRET, { expiresIn: "1d" });
         },
-
-        login: async (_, { email, password }) => {
-            const user = await validateUser(email, password);
-            if (!user){
-                throw new Error("Wrong lil bro ");
-            }
-            return signToken(user._id.toString());
+        login: async (_: any, args: any) => {
+            const trainer = await TrainerModel.validateTrainer(args.name, args.password);
+            if (!trainer) throw new GraphQLError("Invalid credentials");
+            return jwt.sign({ id: trainer._id.toString(), name: trainer.name }, JWT_SECRET, { expiresIn: "1d" });
         },
-
-        addPost: async (_, { post }, { user }) => {
-            if (!user) {
-                throw new Error("You aint logged in lil bro");
-            }
-            return await addPost({ ...post, idUser: user._id.toString() });
+        createPokemon: async (_: any, args: any) => {
+            return await SpeciesModel.addSpecies({ ...args });
         },
+        catchPokemon: async (_: any, args: { pokemonId: string, nickname?: string }, context: { user: any }) => {
+            if (!context.user) throw new GraphQLError("Not authenticated");
 
-        updatePost: async (_, { id, updates }, { user }) => {
-            if (!user) {
-                throw new Error("You aint logged in lil bro");
-            }
-            await validatePostBelongsToUser(id, user.id);
-            return await updatePost(id, updates);
+            const species = await SpeciesModel.getSpeciesById(args.pokemonId);
+
+            const newCaughtPokemon = {
+                nickname: args.nickname || species.name,
+                level: 1,
+                originalSpeciesId: args.pokemonId,
+                capturedAt: new Date()
+            };
+
+            const savedPokemon = await PokemonModel.addCaughtPokemon(newCaughtPokemon);
+            await TrainerModel.addPokemonToTrainer(context.user.id, savedPokemon);
+            return savedPokemon;
         },
+        freePokemon: async (_: any, args: { ownedPokemonId: string }, context: { user: any }) => {
+            if (!context.user) throw new GraphQLError("Not authenticated");
+            await PokemonModel.deleteCaughtPokemon(args.ownedPokemonId);
+            return await TrainerModel.removePokemonFromTrainer(context.user.id, args.ownedPokemonId);
+        },
+    },
 
-        deletePost: async (_, { id }, { user }) => {
-            if (!user) {
-                throw new Error("You aint logged in lil bro");
-            }
-            await validatePostBelongsToUser(id, user.id);
-            return await deletePost(id);
+    CaughtPokemon: {
+        species: async (parent: any) => {
+            return await SpeciesModel.getSpeciesById(parent.originalSpeciesId);
         }
     }
-
-
-
-}
+};

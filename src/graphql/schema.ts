@@ -1,42 +1,69 @@
-// src/graphql/schema.ts
-import { gql } from "apollo-server"
+import { gql } from "apollo-server";
 
 export const typeDefs = gql`
-
-    type User {
-        _id: ID!
-        nombre: String
-        email: String
+    enum PokemonType {
+        GRASS
+        POISON
+        FIRE
+        WATER
+        NORMAL
+        FLYING
+        ELECTRIC
+        # Add others as needed
     }
 
-    type Post {
+    type PokemonSpecies {
         _id: ID!
-        titulo: String
-        contenido: String
-        autor: String
-        fechaCreacion: String
-        idUser: String
+        name: String!
+        description: String!
+        height: Float!
+        weight: Float!
+        types: [PokemonType!]!
     }
 
-    input inPost {
-        titulo: String
-        contenido: String
-        autor: String
-        fechaCreacion: String
+    type CaughtPokemon {
+        _id: ID!
+        nickname: String
+        level: Int!
+        species: PokemonSpecies!
+        capturedAt: String
+    }
+
+    type Trainer {
+        _id: ID!
+        name: String!
+        pokemons: [CaughtPokemon!]!
     }
 
     type Query {
-        me: User
-        getPosts: [Post]!
-        getPost(id: ID!): Post
+        # Returns all pokedex entries
+        pokemons: [PokemonSpecies!]!
+        # Returns a specific pokedex entry by ID
+        pokemon(id: ID!): PokemonSpecies
+        # Returns the logged-in trainer's profile
+        me: Trainer
     }
 
     type Mutation {
-        register(nombre: String!, email: String!, password: String!): String!
-        login(email: String!, password: String!): String!
-        addPost(post: inPost!): Post!
-        updatePost(id: ID!, updates: inPost!): Post!
-        deletePost(id: ID!): Post!
-    }
+        # Registers a new trainer and returns a JWT
+        startJourney(name: String!, password: String!): String!
 
-`
+        # Authenticates a trainer and returns a JWT
+        login(name: String!, password: String!): String!
+
+        # Adds a new species to the global database
+        createPokemon(
+            name: String!
+            description: String!
+            height: Float!
+            weight: Float!
+            types: [PokemonType!]!
+        ): PokemonSpecies!
+
+        # Captures a pokemon for the current trainer
+        catchPokemon(pokemonId: ID!, nickname: String): CaughtPokemon!
+
+        # Removes a pokemon from the trainer's collection
+        freePokemon(ownedPokemonId: ID!): Trainer!
+    }
+`;
