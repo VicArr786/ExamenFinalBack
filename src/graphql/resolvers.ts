@@ -4,17 +4,25 @@ import * as TrainerModel from "../collections/TrainerCollection";
 import * as SpeciesModel from "../collections/SpeciesCollection";
 import * as PokemonModel from "../collections/PokemonCollection";
 import {randomInt} from "node:crypto";
+import {validateTrainer} from "../collections/TrainerCollection";
+import {getDB} from "../mongo";
 
 const JWT_SECRET = "pikachu_secret_key";
+const coleccion = () => getDB().collection("Species");
 
 export const resolvers = {
     Query: {
-        pokemons: async () => await SpeciesModel.getAllSpecies(),
-        pokemon: async (_: any, args: { id: string }) => await SpeciesModel.getSpeciesById(args.id),
         me: async (_: any, __: any, context: { user: any }) => {
             if (!context.user) throw new GraphQLError("Not authenticated");
             return await TrainerModel.findTrainerById(context.user.id);
         },
+        pokemons: async () => {
+            const db = getDB();
+            return db.collection("Species").find().toArray();
+            //await coleccion().find().toArray()
+        },
+        pokemon: async (_: any, args: { id: string }) => await SpeciesModel.getSpeciesById(args.id),
+
     },
 
     Mutation: {
@@ -31,7 +39,7 @@ export const resolvers = {
             return await SpeciesModel.addSpecies({ ...args });
         },
         catchPokemon: async (_: any, args: { pokemonId: string, nickname?: string }, context: { user: any }) => {
-            if (!context.user) throw new GraphQLError("Not authenticated");
+            if (!context.user) throw new GraphQLError("Not authenticated cuh");
 
             const species = await SpeciesModel.getSpeciesById(args.pokemonId);
 
@@ -50,7 +58,7 @@ export const resolvers = {
             return savedPokemon;
         },
         freePokemon: async (_: any, args: { ownedPokemonId: string }, context: { user: any }) => {
-            if (!context.user) throw new GraphQLError("Not authenticated");
+            if (!context.user) throw new GraphQLError("Not authenticated cuh ");
             await PokemonModel.freePokemon(args.ownedPokemonId);
             return await TrainerModel.removePokemonFromTrainer(context.user.id, args.ownedPokemonId);
         },

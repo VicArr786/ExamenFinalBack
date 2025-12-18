@@ -20,5 +20,8 @@ export const getSpeciesById = async (id: string) => {
 };
 
 export const getAllSpecies = async () => {
-    return await coleccion().find().toArray();
+        const limit = 10;
+        const page = 10;
+        return await coleccion().find().limit(limit).toArray();
+
 };
