@@ -16,11 +16,11 @@ export const resolvers = {
             if (!context.user) throw new GraphQLError("Not authenticated");
             return await TrainerModel.findTrainerById(context.user.id);
         },
-        pokemons: async () => {
+        pokemons: async () => await SpeciesModel.getAllSpecies() /*{
             const db = getDB();
             return db.collection("Species").find().toArray();
             //await coleccion().find().toArray()
-        },
+        }*/,
         pokemon: async (_: any, args: { id: string }) => await SpeciesModel.getSpeciesById(args.id),
 
     },
